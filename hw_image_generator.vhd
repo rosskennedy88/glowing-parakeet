@@ -29,20 +29,20 @@ use ieee.std_logic_unsigned.all;
 ENTITY hw_image_generator IS
 	
 	PORT(
-	   CLK_50MHz   :  in    std_logic;
-		disp_ena		:	IN		STD_LOGIC;	--display enable ('1' = display time, '0' = blanking time)
-		row			:	in		INTEGER;		--row pixel coordinate
-		column		:	in		INTEGER;		--column pixel coordinate
-		red			:Buffer STD_LOGIC_VECTOR(7 DOWNTO 0) := (OTHERS => '0');  --red magnitude output to DAC
-		green			:Buffer STD_LOGIC_VECTOR(7 DOWNTO 0) := (OTHERS => '0');  --green magnitude output to DAC
-		blue			:Buffer STD_LOGIC_VECTOR(7 DOWNTO 0) := (OTHERS => '0'); --blue magnitude output to DAC
-		button_1    :  IN    STD_LOGIC; --controls left paddle up movment
-		button_2    :  IN    STD_LOGIC;--controls left paddle down movment
-		button_3    :  IN    STD_LOGIC;--controls right paddle up movment
-		button_4    :  IN    STD_LOGIC;--controls right paddle down movment
-		hex_left	:  out std_logic_vector(6 downto 0);
-		hex_right	:  out std_logic_vector(6 downto 0);
-		SW1 : in std_logic
+	   CLK_50MHz   :  IN     STD_LOGIC;
+		disp_ena		:	IN		 STD_LOGIC;	--display enable ('1' = display time, '0' = blanking time)
+		row			:	IN		 INTEGER;		--row pixel coordinate
+		column		:	IN		 INTEGER;		--column pixel coordinate
+		red			:  Buffer STD_LOGIC_VECTOR(7 DOWNTO 0) := (OTHERS => '0');  --red magnitude output to DAC
+		green			:  Buffer STD_LOGIC_VECTOR(7 DOWNTO 0) := (OTHERS => '0');  --green magnitude output to DAC
+		blue			:  Buffer STD_LOGIC_VECTOR(7 DOWNTO 0) := (OTHERS => '0');  --blue magnitude output to DAC
+		button_1    :  IN     STD_LOGIC; --controls left paddle up movment
+		button_2    :  IN     STD_LOGIC; --controls left paddle down movment
+		button_3    :  IN     STD_LOGIC; --controls right paddle up movment
+		button_4    :  IN     STD_LOGIC; --controls right paddle down movment
+		hex_left		:  OUT    STD_LOGIC_VECTOR(6 downto 0);
+		hex_right	:  OUT    STD_LOGIC_VECTOR(6 downto 0);
+		SW1 			:  IN     STD_LOGIC
 		);
 		
 END hw_image_generator;
@@ -55,6 +55,7 @@ constant paddle_speed : integer := 1;
 constant paddle_height : integer := 10;
 constant default_ball_speed : integer := 6; --intial ball speed
 
+
 signal counter : std_logic_vector(26 downto 0);  -- signal that does the counting  
 signal CLK_1HZ : std_logic;   -- to drive the LED
 -- paddle 1 singals
@@ -63,8 +64,8 @@ signal paddle_aw1 : integer range 0 to 1920:= 30;
 signal paddle_bh1 : integer range 0 to 1080:= 415;
 signal paddle_bw1 : integer range 0 to 1920:= 1840;
 --ball signals 
-signal ball_pos_w: integer range 0 to 1080:= 525;
-signal ball_pos_h: integer range 0 to 1920:= 945;
+signal ball_pos_w : integer range 0 to 1080:= 525;
+signal ball_pos_h : integer range 0 to 1920:= 945;
 signal ball_up	  	: std_logic:= '0';
 signal ball_right	: std_logic:= '1';
 signal ball_speed_h 	: integer range 0 to 19:= default_ball_speed;
@@ -83,28 +84,32 @@ BEGIN
 	
 		IF(disp_ena = '1') THEN		--draw process
 		
-	
+	         --left paddle draw
 				IF((column >= paddle_ah1 and column < paddle_ah1 + 250) and (row >= paddle_aw1 and row < paddle_aw1 + 40)) THEN
-				red <= (OTHERS => '1');
-				green	<= (OTHERS => '0');
+				red <= (OTHERS => '0');
+				green	<= (OTHERS => '1');
 				blue <= (OTHERS => '0');
 				
+				--right paddle draw
 				elsIF((column >= paddle_bh1 and column < paddle_bh1 + 250) and (row >= paddle_bw1 and row < paddle_bw1 + 40)) THEN
-				red <= (OTHERS => '1');
-				green	<= (OTHERS => '0');
-				blue <= (OTHERS => '0');
-					
-				elsIF((column >= ball_pos_w and column < ball_pos_w + 30) and (row >= ball_pos_h and row < ball_pos_h + 30)) THEN
 				red <= (OTHERS => '0');
-				green	<= (OTHERS => '0');
+				green	<= (OTHERS => '1');
+				blue <= (OTHERS => '0');
+			   
+				--ball draw
+				elsIF((column >= ball_pos_w and column < ball_pos_w + 30) and (row >= ball_pos_h and row < ball_pos_h + 30)) THEN
+				red <= (OTHERS => '1');
+				green	<= (OTHERS => '1');
 				blue <= (OTHERS => '1');
 				
 		   	ELSE
 				red <= (OTHERS => '0');
 				green	<= (OTHERS => '0');
-				blue <= (OTHERS => '0');
+				blue <= (OTHERS => '1');
 	      	END IF;
-		      ELSE								--blanking time
+				
+				--back ground color
+		      ELSE
 			   red <= (OTHERS => '0');
 			   green <= (OTHERS => '0');
 			   blue <= (OTHERS => '0');
@@ -151,6 +156,9 @@ begin
 			ball_pos_w <= 525;
 			ball_speed_h <= default_ball_speed;
 			ball_speed_v <= default_ball_speed;
+			paddle_bh1 <= 415;
+			paddle_ah1<= 415;
+			
 		else
 
 			--If ball travelling right, and not far right
@@ -162,7 +170,7 @@ begin
 				ball_up <= '0';
 				
 					--display score for left player			
-					if (left_player_score <= "0000001") then    --1
+					if (left_player_score <= "0000001") then  --1
 								 hex_left <= "1001111";
 								 left_player_score <= "0000010";
 								 ball_pos_h<= 945;
@@ -170,7 +178,7 @@ begin
 								 ball_speed_v <= default_ball_speed;
 		                   ball_speed_h <= default_ball_speed; 
 								 
-					elsif (left_player_score <= "0000010") then    --2
+					elsif (left_player_score <= "0000010") then  --2
 								 hex_left <= "0010010";
 								 left_player_score <="0000011";
 								 ball_pos_h <= 945;
@@ -178,23 +186,23 @@ begin
 								 ball_speed_v <= default_ball_speed;
 		                   ball_speed_h <= default_ball_speed; 
 								 
-					elsif (left_player_score <= "0000011") then    --3
-							hex_left <= "0000110";
+					elsif (left_player_score <= "0000011") then --3
+							    hex_left <= "0000110";
 								 left_player_score <="0000100";
 								 ball_pos_h <= 945;
 					          ball_pos_w <= 525;
 								 ball_speed_v <= default_ball_speed;
 		                   ball_speed_h <= default_ball_speed; 
 								 
-					elsif (left_player_score <= "0000100") then    --4
-								 hex_left <= "1001100";
+					elsif (left_player_score <= "0000100") then --4
+								hex_left <= "1001100";
 								left_player_score <= "0000101";
 								ball_pos_h <= 945;
 				 	         ball_pos_w <= 525;
 								ball_speed_v <= default_ball_speed;
 		                  ball_speed_h <= default_ball_speed; 
 								
-					elsif (left_player_score <= "0000101") then    --5
+					elsif (left_player_score <= "0000101") then  --5
 								 hex_left <= "0100100";
 								 left_player_score <= "0000110";
 								 ball_pos_h <= 945;
@@ -202,7 +210,7 @@ begin
 								 ball_speed_v <= default_ball_speed;
 		                   ball_speed_h <= default_ball_speed; 
 								 
-					elsif (left_player_score <= "0000110") then   --6
+					elsif (left_player_score <= "0000110") then  --6
 								 hex_left <= "0100000"; 
 								left_player_score <= "0000111";
 								ball_pos_h <= 945;
@@ -210,7 +218,7 @@ begin
 								ball_speed_v <= default_ball_speed;
 		                  ball_speed_h <= default_ball_speed; 
 								 
-	   			elsif (left_player_score <= "0000111") then   --7
+	   			elsif (left_player_score <= "0000111") then  --7
 								 hex_left <= "0001111";
 								  left_player_score <= "0001000";
 								  ball_pos_h <= 945;
@@ -218,7 +226,7 @@ begin
 								 ball_speed_v <= default_ball_speed;
 		                   ball_speed_h <= default_ball_speed; 
 								 
-					elsif (left_player_score <= "0001000") then   --8
+					elsif (left_player_score <= "0001000") then  --8
 								hex_left <= "0000000";
 								 left_player_score <= "0001001";
 								 ball_pos_h <= 945;
@@ -255,7 +263,7 @@ begin
 		                  ball_speed_h <= default_ball_speed; 
 								
 								 
-					elsif (right_player_score = "0000010") then    --2
+					elsif (right_player_score = "0000010") then  --2
 								hex_right <= "0010010";
 								right_player_score <=  "0000011";
 								ball_pos_h <= 945;
@@ -263,7 +271,7 @@ begin
 								ball_speed_v <= default_ball_speed;
 		                  ball_speed_h <= default_ball_speed; 
 								 
-					elsif (right_player_score = "0000011") then    --3
+					elsif (right_player_score = "0000011") then  --3
 								hex_right <= "0000110";
 								right_player_score <= "0000100";
 								ball_pos_h <= 945;
@@ -271,7 +279,7 @@ begin
 								ball_speed_v <= default_ball_speed;
 		                  ball_speed_h <= default_ball_speed; 
 								 
-					elsif (right_player_score <= "0000100") then    --4
+					elsif (right_player_score <= "0000100") then --4
 								hex_right <= "1001100";
 								right_player_score <="0000101";
 								ball_pos_h <= 945;
@@ -279,7 +287,7 @@ begin
 								ball_speed_v <= default_ball_speed;
 		                  ball_speed_h <= default_ball_speed; 
 								
-					elsif (right_player_score <= "0000101") then    --5
+					elsif (right_player_score <= "0000101") then --5
 								 hex_right <= "0100100";
 								 right_player_score <="0000110";
 								 ball_pos_h <= 945;
@@ -287,7 +295,7 @@ begin
 								ball_speed_v <= default_ball_speed;
 		                  ball_speed_h <= default_ball_speed; 
 								 
-					elsif (right_player_score <= "0000110") then   --6
+					elsif (right_player_score <= "0000110") then --6
 								 hex_right <= "0100000"; 
 								right_player_score <="0000111";
 								ball_pos_h <= 945;
@@ -295,7 +303,7 @@ begin
 								ball_speed_v <= default_ball_speed;
 		                  ball_speed_h <= default_ball_speed; 
 								 
-					elsif (right_player_score = "0000111") then   --7
+					elsif (right_player_score = "0000111") then  --7
 							   hex_right <= "0001111";
 								right_player_score <= "0001000";
 							   ball_pos_h <= 945;
@@ -303,7 +311,7 @@ begin
 								ball_speed_v <= default_ball_speed;
 		                  ball_speed_h <= default_ball_speed; 
 								 
-					elsif (right_player_score <= "0001000") then   --8
+					elsif (right_player_score <= "0001000") then --8
 								hex_right <= "0000000";
 								right_player_score <= "0001001";
 								ball_pos_h <= 945;
@@ -311,7 +319,7 @@ begin
 								ball_speed_v <= default_ball_speed;
 		                  ball_speed_h <= default_ball_speed; 
 								 
-					elsif (right_player_score <= "0001001") then  --9
+					elsif (right_player_score <= "0001001") then --9
 								hex_right <= "0000100";
 								right_player_score <="0001001";
 								ball_pos_h <= 945;
@@ -325,7 +333,7 @@ begin
 			end if;
 			
 			--If ball travelling down, and not at bottom boundry
-			if (ball_pos_w < 1044 and ball_right = '1') then
+		if (ball_pos_w < 1044 and ball_right = '1') then
 				ball_pos_w <= ball_pos_w + ball_speed_h;
 				
 			--If ball travelling right and at far right
@@ -342,21 +350,21 @@ begin
 			end if;
 		end if;
 		
-		--detect collision with left paddle
-		if (((ball_pos_w + 30 > paddle_ah1) and (ball_pos_w <  paddle_ah1 + 250)) and (paddle_aw1 + 40 > ball_pos_h)) then
-		ball_up <= '1';
+			--detect collision with left paddle
+			if (((ball_pos_w + 30 > paddle_ah1) and (ball_pos_w <  paddle_ah1 + 250)) and (paddle_aw1 + 40 > ball_pos_h)) then
+			ball_up <= '1';
 		
-		--increase ball speed each time a collision occurs on left paddle
-		ball_speed_v <= ball_speed_v + 1;
-		ball_speed_h <= ball_speed_h + 1; 
-		
-		--detect collision with right paddle
-		elsif (((ball_pos_w + 30 > paddle_bh1) and (ball_pos_w <  paddle_bh1 + 250)) and (paddle_bw1 < (ball_pos_h + 30))) then
-			    ball_up <= '0';
-		   --increase ball speed each time a collision occurs on right paddle
+			--increase ball speed each time a collision occurs on left paddle
 			ball_speed_v <= ball_speed_v + 1;
-			ball_speed_h <= ball_speed_h + 1;
-		end if;
+			ball_speed_h <= ball_speed_h + 1; 
+		
+				--detect collision with right paddle
+				elsif (((ball_pos_w + 30 > paddle_bh1) and (ball_pos_w <  paddle_bh1 + 250)) and (paddle_bw1 < (ball_pos_h + 30))) then
+					ball_up <= '0';
+					--increase ball speed each time a collision occurs on right paddle
+					ball_speed_v <= ball_speed_v + 1;
+					ball_speed_h <= ball_speed_h + 1;
+			end if;
 		end if;			
 	end if;				
 end if;
